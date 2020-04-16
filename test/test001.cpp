@@ -6,7 +6,14 @@ int main()
 {
     char c = 'a';
     char_t b = 'b';
-    int i = 10;
-    std::cout << i << std::endl;
+    char_t&& bb = 'b';
+    char_t *d = nullptr;
+    const char* blah = "blah";
+    float f = 11;
+    float& g = f;
+    float* h = &g;
+    float*& i = h;
+    int x = 10;
+    std::cout << x << std::endl;
     return 0;
 }

@@ -17,8 +17,8 @@ pub struct Opts {
     #[structopt(short, long, parse(from_occurrences))]
     pub verbose: u8,
 
-    /// Output file
-    #[structopt(short, long, parse(from_os_str))]
+    /// Input file
+    #[structopt(parse(from_os_str))]
     pub input: PathBuf,
 
     /// Include Paths

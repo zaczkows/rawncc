@@ -1,22 +1,37 @@
 use rawncc;
 
-fn recurse_check(entity: &Vec<clang::Entity>, file_location: &str) {
-    entity
-        .iter()
-        .filter(|x| {
-            let loc = x.get_location();
-            if let Some(l) = loc {
-                if let Some(f) = l.get_file_location().file {
-                    return f.get_path().to_str().unwrap() == file_location;
-                }
-            }
+#[derive(Debug)]
+enum VarContextType {
+    None,
+    Ptr,
+    Ref,
+}
 
-            false
-        })
-        .for_each(|x| {
-            log::debug!("Parsing {:?}", x);
-            recurse_check(&x.get_children(), file_location);
-        });
+impl VarContextType {
+    fn from(entity: &clang::Entity) -> Self {
+        match entity.get_type().unwrap().get_kind() {
+            clang::TypeKind::Pointer => VarContextType::Ptr,
+            clang::TypeKind::LValueReference => VarContextType::Ref,
+            clang::TypeKind::RValueReference => VarContextType::Ref,
+            _ => VarContextType::None,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct VarContext {
+    name: String,
+    vtype: VarContextType,
+}
+
+impl VarContext {
+    fn from(entity: &clang::Entity) -> Self {
+        assert!(entity.get_kind() == clang::EntityKind::VarDecl);
+        VarContext {
+            name: entity.get_name().unwrap(),
+            vtype: VarContextType::from(entity),
+        }
+    }
 }
 
 fn main() {
@@ -40,16 +55,28 @@ fn main() {
     }
 
     let tu = tu.unwrap();
-    log::debug!("translation unit: {:?}", &tu);
     let entity = tu.get_entity();
-    log::debug!("entity for TU: {:?}", &entity);
+    log::debug!("Parsing translation unit: {:?}", &entity);
     if let Some(l) = entity.get_language() {
         log::debug!("language for TU is {:?}", l);
     }
 
-    let kind = entity.get_kind();
-    log::debug!("parsed {:?} kind", &kind);
-
     let file_location = options.input.to_str().expect("Invalid filename");
-    recurse_check(&entity.get_children(), &file_location);
+    entity.visit_children(|entity, _parent| {
+        let loc = entity.get_location();
+        if let Some(l) = loc {
+            if let Some(f) = l.get_file_location().file {
+                if f.get_path().to_str().unwrap() != file_location {
+                    return clang::EntityVisitResult::Recurse;
+                }
+            }
+        }
+
+        if entity.get_kind() == clang::EntityKind::VarDecl {
+            let vc = VarContext::from(&entity);
+            log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
+            log::debug!("Found variable: {:?}", vc);
+        }
+        return clang::EntityVisitResult::Recurse;
+    });
 }
