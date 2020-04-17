@@ -2,7 +2,7 @@ use rawncc;
 
 #[derive(Debug)]
 enum VarContextType {
-    None,
+    Value,
     Ptr,
     Ref,
 }
@@ -13,7 +13,7 @@ impl VarContextType {
             clang::TypeKind::Pointer => VarContextType::Ptr,
             clang::TypeKind::LValueReference => VarContextType::Ref,
             clang::TypeKind::RValueReference => VarContextType::Ref,
-            _ => VarContextType::None,
+            _ => VarContextType::Value,
         }
     }
 }
@@ -21,15 +21,20 @@ impl VarContextType {
 #[derive(Debug)]
 struct VarContext {
     name: String,
-    vtype: VarContextType,
+    var_type: VarContextType,
+    member: bool,
 }
 
 impl VarContext {
     fn from(entity: &clang::Entity) -> Self {
-        assert!(entity.get_kind() == clang::EntityKind::VarDecl);
+        assert!(
+            entity.get_kind() == clang::EntityKind::VarDecl
+                || entity.get_kind() == clang::EntityKind::FieldDecl
+        );
         VarContext {
             name: entity.get_name().unwrap(),
-            vtype: VarContextType::from(entity),
+            var_type: VarContextType::from(entity),
+            member: entity.get_kind() == clang::EntityKind::FieldDecl,
         }
     }
 }
@@ -45,7 +50,7 @@ fn main() {
 
     log::debug!("Using {}", clang::get_version());
     let c = clang::Clang::new().expect("Failed to create basic clang object");
-    let i = clang::Index::new(&c, false, options.debug);
+    let i = clang::Index::new(&c, false, options.verbose > 0);
     let mut p = i.parser(&options.input);
     p.arguments(&["-x", "c++", "-std=c++11"]);
     let tu = p.parse();
@@ -61,6 +66,10 @@ fn main() {
         log::debug!("language for TU is {:?}", l);
     }
 
+    let var_handler = |context| {
+        log::debug!("Found variable: {:?}", context);
+    };
+
     let file_location = options.input.to_str().expect("Invalid filename");
     entity.visit_children(|entity, _parent| {
         let loc = entity.get_location();
@@ -72,10 +81,16 @@ fn main() {
             }
         }
 
-        if entity.get_kind() == clang::EntityKind::VarDecl {
-            let vc = VarContext::from(&entity);
-            log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
-            log::debug!("Found variable: {:?}", vc);
+        if options.debug {
+            log::debug!("Entity item: {:?}", &entity);
+        }
+
+        match entity.get_kind() {
+            clang::EntityKind::VarDecl | clang::EntityKind::FieldDecl => {
+                log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
+                var_handler(VarContext::from(&entity));
+            }
+            _ => (),
         }
         return clang::EntityVisitResult::Recurse;
     });
