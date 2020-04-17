@@ -19,10 +19,32 @@ impl VarContextType {
 }
 
 #[derive(Debug)]
+struct SrcLocation {
+    file: String,
+    line_no: u32,
+    column: u32,
+    offset: u32,
+}
+
+impl SrcLocation {
+    fn from(entity: &clang::Entity) -> Self {
+        let loc = entity.get_location().unwrap().get_file_location();
+        SrcLocation {
+            file: String::from(loc.file.unwrap().get_path().to_str().unwrap()),
+            line_no: loc.line,
+            column: loc.column,
+            offset: loc.offset,
+        }
+    }
+}
+
+#[derive(Debug)]
 struct VarContext {
     name: String,
     var_type: VarContextType,
-    member: bool,
+    is_member: bool,
+    is_const: bool,
+    src_location: SrcLocation,
 }
 
 impl VarContext {
@@ -34,7 +56,9 @@ impl VarContext {
         VarContext {
             name: entity.get_name().unwrap(),
             var_type: VarContextType::from(entity),
-            member: entity.get_kind() == clang::EntityKind::FieldDecl,
+            is_member: entity.get_kind() == clang::EntityKind::FieldDecl,
+            is_const: entity.get_type().unwrap().is_const_qualified(),
+            src_location: SrcLocation::from(entity),
         }
     }
 }
@@ -70,14 +94,11 @@ fn main() {
         log::debug!("Found variable: {:?}", context);
     };
 
-    let file_location = options.input.to_str().expect("Invalid filename");
     entity.visit_children(|entity, _parent| {
         let loc = entity.get_location();
         if let Some(l) = loc {
-            if let Some(f) = l.get_file_location().file {
-                if f.get_path().to_str().unwrap() != file_location {
-                    return clang::EntityVisitResult::Recurse;
-                }
+            if !l.is_in_main_file() {
+                return clang::EntityVisitResult::Recurse;
             }
         }
 

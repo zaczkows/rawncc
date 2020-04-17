@@ -2,6 +2,15 @@
 
 typedef char char_t;
 
+struct Temp {
+    void blah(int a, int b);
+private:
+    int m_a;
+};
+
+const double the_const = 666.42;
+constexpr unsigned the_unsigned = 44;
+
 int main()
 {
     char c = 'a';
