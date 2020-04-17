@@ -1,6 +1,6 @@
 use rawncc;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum VarContextType {
     Value,
     Ptr,
@@ -44,6 +44,7 @@ struct VarContext {
     var_type: VarContextType,
     is_member: bool,
     is_const: bool,
+    is_static: bool,
     src_location: SrcLocation,
 }
 
@@ -53,11 +54,20 @@ impl VarContext {
             entity.get_kind() == clang::EntityKind::VarDecl
                 || entity.get_kind() == clang::EntityKind::FieldDecl
         );
+        let var_type = VarContextType::from(entity);
+        let context_type = entity.get_type().unwrap();
+        let is_const = (if var_type != VarContextType::Value {
+            context_type.get_pointee_type().unwrap()
+        } else {
+            context_type
+        })
+        .is_const_qualified();
         VarContext {
             name: entity.get_name().unwrap(),
-            var_type: VarContextType::from(entity),
+            var_type: var_type,
             is_member: entity.get_kind() == clang::EntityKind::FieldDecl,
-            is_const: entity.get_type().unwrap().is_const_qualified(),
+            is_const: is_const,
+            is_static: entity.get_linkage().unwrap() == clang::Linkage::Internal,
             src_location: SrcLocation::from(entity),
         }
     }
