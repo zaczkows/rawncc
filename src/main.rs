@@ -23,7 +23,6 @@ struct SrcLocation {
     file: String,
     line_no: u32,
     column: u32,
-    offset: u32,
 }
 
 impl SrcLocation {
@@ -33,7 +32,6 @@ impl SrcLocation {
             file: String::from(loc.file.unwrap().get_path().to_str().unwrap()),
             line_no: loc.line,
             column: loc.column,
-            offset: loc.offset,
         }
     }
 }
@@ -64,10 +62,10 @@ impl VarContext {
         .is_const_qualified();
         VarContext {
             name: entity.get_name().unwrap(),
-            var_type: var_type,
-            is_member: entity.get_kind() == clang::EntityKind::FieldDecl,
-            is_const: is_const,
-            is_static: entity.get_linkage().unwrap() == clang::Linkage::Internal,
+            var_type,
+            is_member: entity.get_accessibility().is_some(),
+            is_const,
+            is_static: entity.get_linkage().unwrap() != clang::Linkage::Automatic,
             src_location: SrcLocation::from(entity),
         }
     }
@@ -85,8 +83,16 @@ fn main() {
     log::debug!("Using {}", clang::get_version());
     let c = clang::Clang::new().expect("Failed to create basic clang object");
     let i = clang::Index::new(&c, false, options.verbose > 0);
+    let mut cpp_arguments = vec!["-x", "c++", "-std=c++11"];
+    for i in options.includes.iter() {
+        cpp_arguments.push("-I");
+        cpp_arguments.push(i.as_str());
+    }
     let mut p = i.parser(&options.input);
-    p.arguments(&["-x", "c++", "-std=c++11"]);
+    if options.verbose == 2 {
+        log::debug!("Parsing with arguments: {:?}", cpp_arguments);
+    }
+    p.arguments(&cpp_arguments[..]);
     let tu = p.parse();
     if let Err(e) = tu {
         log::error!("Failed to parse file with error {}", e);
@@ -100,8 +106,31 @@ fn main() {
         log::debug!("language for TU is {:?}", l);
     }
 
-    let var_handler = |context| {
+    let var_handler = |context: VarContext| {
         log::debug!("Found variable: {:?}", context);
+        let mut regex_str = String::new();
+        let static_const = context.is_static && context.is_const;
+        if static_const {
+            if context.is_member {
+                regex_str += "([A-Z]+_)+[A-Z]+";
+            } else {
+                regex_str += "m_";
+            }
+        } else {
+            if context.var_type == VarContextType::Ptr {
+                regex_str += "p";
+            }
+            if context.var_type == VarContextType::Ref {
+                regex_str += "r";
+            }
+
+            regex_str += "([A-Z][a-z0-9]+)+";
+        }
+
+        let r = regex::Regex::new(regex_str.as_str()).unwrap();
+        if !r.is_match(context.name.as_str()) {
+            log::debug!("Invalid naming");
+        }
     };
 
     entity.visit_children(|entity, _parent| {
@@ -118,7 +147,7 @@ fn main() {
 
         match entity.get_kind() {
             clang::EntityKind::VarDecl | clang::EntityKind::FieldDecl => {
-                log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
+                // log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
                 var_handler(VarContext::from(&entity));
             }
             _ => (),

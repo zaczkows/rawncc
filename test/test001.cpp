@@ -3,9 +3,13 @@
 typedef char char_t;
 
 struct Temp {
+    Temp(int& t):m_Int(t), m_pInt(&t), m_rInt(t) {}
     void blah(int a, int b);
 private:
-    int m_a;
+    int m_Int;
+    int* m_pInt;
+    int& m_rInt;
+    static const int THE_INT = 5;
 };
 
 const double the_const_d = 666.42;
