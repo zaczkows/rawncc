@@ -18,7 +18,7 @@ fn test_file_001_cpp() {
     let mut items = Vec::<rawncc::VarContext>::new();
     let callback = |context| items.push(context);
     rawncc::parse_file(opts, callback);
-    assert_eq!(20, items.len());
+    assert_eq!(22, items.len());
     assert_eq!(
         rawncc::VarContext {
             name: "UNNAMED_NAMESPACE".to_owned(),
@@ -28,7 +28,7 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 5,
+                line_no: 7,
                 column: 13,
             }
         },
@@ -43,11 +43,26 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 8,
+                line_no: 10,
                 column: 20,
             }
         },
         items[1]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "wtf".to_owned(),
+            var_type: rawncc::VarContextType::Ptr,
+            is_member: true,
+            is_const: true,
+            is_static: true,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 12,
+                column: 22,
+            }
+        },
+        items[2]
     );
     assert_eq!(
         rawncc::VarContext {
@@ -58,10 +73,10 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 19,
+                line_no: 23,
                 column: 22,
             }
         },
-        items[5]
+        items[6]
     );
 }

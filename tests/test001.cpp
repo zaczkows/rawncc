@@ -1,3 +1,5 @@
+#include "test001.hpp"
+
 #include <iostream>
 
 namespace
@@ -6,6 +8,8 @@ const char* UNNAMED_NAMESPACE = "the text";
 }
 
 static const char* the_const_string = "really???";
+
+const char* Test001::wtf = "wtf";
 
 typedef char char_t;
 
@@ -37,5 +41,7 @@ int main()
     float*& i = h;
     int x = 10;
     std::cout << x << std::endl;
+    Test001 test_001;
+    std::cout << Test001::wtf << std::endl;
     return 0;
 }
