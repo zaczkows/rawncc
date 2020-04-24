@@ -20,11 +20,11 @@ impl VarContextType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SrcLocation {
-    file: String,
-    line_no: u32,
-    column: u32,
+    pub file: String,
+    pub line_no: u32,
+    pub column: u32,
 }
 
 impl SrcLocation {
@@ -38,7 +38,7 @@ impl SrcLocation {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VarContext {
     pub name: String,
     pub var_type: VarContextType,
@@ -49,7 +49,7 @@ pub struct VarContext {
 }
 
 impl VarContext {
-    pub fn from(entity: &clang::Entity) -> Self {
+    pub fn from(entity: &clang::Entity, parent: &clang::Entity) -> Self {
         assert!(
             entity.get_kind() == clang::EntityKind::VarDecl
                 || entity.get_kind() == clang::EntityKind::FieldDecl
@@ -65,7 +65,9 @@ impl VarContext {
         VarContext {
             name: entity.get_name().unwrap(),
             var_type,
-            is_member: entity.get_accessibility().is_some(),
+            is_member: entity.get_kind() == clang::EntityKind::FieldDecl
+                || parent.get_kind() == clang::EntityKind::StructDecl
+                || parent.get_kind() == clang::EntityKind::ClassDecl,
             is_const,
             is_static: entity.get_linkage().unwrap() != clang::Linkage::Automatic,
             src_location: SrcLocation::from(entity),
@@ -100,7 +102,7 @@ pub fn parse_file<F: FnMut(VarContext)>(options: Options, mut callback: F) {
         log::debug!("language for TU is {:?}", l);
     }
 
-    entity.visit_children(|entity, _parent| {
+    entity.visit_children(|entity, parent| {
         let loc = entity.get_location();
         if let Some(l) = loc {
             if !l.is_in_main_file() {
@@ -115,7 +117,7 @@ pub fn parse_file<F: FnMut(VarContext)>(options: Options, mut callback: F) {
         match entity.get_kind() {
             clang::EntityKind::VarDecl | clang::EntityKind::FieldDecl => {
                 // log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
-                callback(VarContext::from(&entity));
+                callback(VarContext::from(&entity, &parent));
             }
             _ => (),
         }

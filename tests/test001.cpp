@@ -1,5 +1,12 @@
 #include <iostream>
 
+namespace
+{
+const char* UNNAMED_NAMESPACE = "the text";
+}
+
+static const char* the_const_string = "really???";
+
 typedef char char_t;
 
 struct Temp {
@@ -14,7 +21,6 @@ private:
 
 const double the_const_d = 666.42;
 constexpr unsigned the_const_unsigned = 44;
-static const char* the_const_string = "really???";
 const double& the_const_ref_d = the_const_d;
 static const char& the_const_ref_char = the_const_string[0];
 
