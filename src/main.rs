@@ -49,15 +49,14 @@ fn main() {
 
     let var_handler = |context: VarContext| {
         log::debug!("Found variable: {:?}", context);
-        let mut regex_str = String::new();
+        let mut regex_str = String::from("^");
         let static_const = context.is_static && context.is_const;
         if static_const {
+            regex_str += "([A-Z]+_)+[A-Z]+";
+        } else {
             if context.is_member {
-                regex_str += "([A-Z]+_)+[A-Z]+";
-            } else {
                 regex_str += "m_";
             }
-        } else {
             if context.var_type == VarContextType::Ptr {
                 regex_str += "p";
             }
@@ -65,12 +64,18 @@ fn main() {
                 regex_str += "r";
             }
 
-            regex_str += "([A-Z][a-z0-9]+)+";
+            if context.is_member {
+                regex_str += "([A-Z][a-z0-9]+)+";
+            }
+            else{
+                regex_str += "[a-z0-9]+([A-Z][a-z0-9]+)*";
+            }
         }
+        regex_str += "$";
 
         let r = regex::Regex::new(regex_str.as_str()).unwrap();
         if !r.is_match(context.name.as_str()) {
-            log::debug!("Invalid naming");
+            log::debug!("Invalid naming (re={})", &regex_str);
         }
     };
 

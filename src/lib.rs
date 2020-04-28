@@ -96,7 +96,7 @@ pub fn parse_file<F: FnMut(VarContext)>(options: Options, mut callback: F) {
     log::debug!("Using {}", clang::get_version());
     let c = clang::Clang::new().expect("Failed to create basic clang object");
     let i = clang::Index::new(&c, false, options.verbose > 0);
-    let mut cpp_arguments = vec!["-x", "c++", "-std=c++11"];
+    let mut cpp_arguments = vec!("-x", "c++", "-std=c++11");
     for i in options.includes.iter() {
         cpp_arguments.push("-I");
         cpp_arguments.push(i.as_str());
