@@ -1,9 +1,9 @@
-use rawncc::{VarContext, VarContextType};
+use rawncc::VarContext;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 /// A basic example
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "basic")]
 pub struct Opts {
     // A flag, true if used in the command line. Note doc comment will
@@ -48,36 +48,18 @@ fn main() {
     let options = Opts::from_args();
 
     let var_handler = |context: VarContext| {
-        log::debug!("Found variable: {:?}", context);
-        let mut regex_str = String::from("^");
-        let static_const = context.is_static && context.is_const;
-        if static_const {
-            regex_str += "([A-Z]+_)+[A-Z]+";
-        } else {
-            if context.is_member {
-                regex_str += "m_";
-            }
-            if context.var_type == VarContextType::Ptr {
-                regex_str += "p";
-            }
-            if context.var_type == VarContextType::Ref {
-                regex_str += "r";
-            }
-
-            if context.is_member {
-                regex_str += "([A-Z][a-z0-9]+)+";
-            }
-            else{
-                regex_str += "[a-z0-9]+([A-Z][a-z0-9]+)*";
-            }
+        if options.debug {
+            log::debug!("Found variable: {:?}", context);
         }
-        regex_str += "$";
-
-        let r = regex::Regex::new(regex_str.as_str()).unwrap();
-        if !r.is_match(context.name.as_str()) {
-            log::debug!("Invalid naming (re={})", &regex_str);
+        match rawncc::check_ra_nc(&context) {
+            Ok(()) => (),
+            Err(regex) => log::debug!(
+                "Invalid name for variable {:?} (regex = {})",
+                &context,
+                &regex
+            ),
         }
     };
 
-    rawncc::parse_file(options.into(), var_handler);
+    rawncc::parse_file(options.clone().into(), var_handler);
 }

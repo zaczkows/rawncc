@@ -1,102 +1,18 @@
 mod opts;
+mod srclocation;
+mod varcontext;
+mod varcontexttype;
 
 pub use opts::Options;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum VarContextType {
-    Value,
-    Ptr,
-    Ref,
-}
-
-impl VarContextType {
-    pub fn from(entity: &clang::Entity) -> Self {
-        match entity.get_type().unwrap().get_kind() {
-            clang::TypeKind::Pointer => VarContextType::Ptr,
-            clang::TypeKind::LValueReference => VarContextType::Ref,
-            clang::TypeKind::RValueReference => VarContextType::Ref,
-            _ => VarContextType::Value,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SrcLocation {
-    pub file: String,
-    pub line_no: u32,
-    pub column: u32,
-}
-
-impl SrcLocation {
-    pub fn from(entity: &clang::Entity) -> Self {
-        let loc = entity.get_location().unwrap().get_file_location();
-        SrcLocation {
-            file: String::from(loc.file.unwrap().get_path().to_str().unwrap()),
-            line_no: loc.line,
-            column: loc.column,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct VarContext {
-    pub name: String,
-    pub var_type: VarContextType,
-    pub is_member: bool,
-    pub is_const: bool,
-    pub is_static: bool,
-    pub src_location: SrcLocation,
-}
-
-fn is_member_variable(entity: &clang::Entity, parent: &clang::Entity) -> bool {
-    // This is needed in case of class static variable initialization
-    // i.e. const int CLASS_NAME::VARIABLE = 42;
-    let semantic_parent = entity.get_semantic_parent();
-    let is_semantic_parent_class = if semantic_parent.is_some() {
-        let kind = semantic_parent.unwrap().get_kind();
-        kind == clang::EntityKind::StructDecl || kind == clang::EntityKind::ClassDecl
-    } else {
-        false
-    };
-
-    entity.get_kind() == clang::EntityKind::FieldDecl
-        || parent.get_kind() == clang::EntityKind::StructDecl
-        || parent.get_kind() == clang::EntityKind::ClassDecl
-        || is_semantic_parent_class
-}
-
-impl VarContext {
-    pub fn from(entity: &clang::Entity, parent: &clang::Entity) -> Self {
-        assert!(
-            entity.get_kind() == clang::EntityKind::VarDecl
-                || entity.get_kind() == clang::EntityKind::FieldDecl
-        );
-        let var_type = VarContextType::from(entity);
-        let context_type = entity.get_type().unwrap();
-        let is_const = (if var_type != VarContextType::Value {
-            context_type.get_pointee_type().unwrap()
-        } else {
-            context_type
-        })
-        .is_const_qualified();
-        let name = entity.get_name().unwrap();
-        let is_static = entity.get_linkage().unwrap() != clang::Linkage::Automatic;
-        VarContext {
-            name,
-            var_type,
-            is_member: is_member_variable(entity, parent),
-            is_const,
-            is_static,
-            src_location: SrcLocation::from(entity),
-        }
-    }
-}
+pub use srclocation::SrcLocation;
+pub use varcontext::VarContext;
+pub use varcontexttype::VarContextType;
 
 pub fn parse_file<F: FnMut(VarContext)>(options: Options, mut callback: F) {
     log::debug!("Using {}", clang::get_version());
     let c = clang::Clang::new().expect("Failed to create basic clang object");
     let i = clang::Index::new(&c, false, options.verbose > 0);
-    let mut cpp_arguments = vec!("-x", "c++", "-std=c++11");
+    let mut cpp_arguments = vec!["-x", "c++", "-std=c++11"];
     for i in options.includes.iter() {
         cpp_arguments.push("-I");
         cpp_arguments.push(i.as_str());
@@ -140,4 +56,35 @@ pub fn parse_file<F: FnMut(VarContext)>(options: Options, mut callback: F) {
         }
         return clang::EntityVisitResult::Recurse;
     });
+}
+
+pub fn check_ra_nc(context: &VarContext) -> Result<(), String> {
+    let mut regex_str = String::from("^");
+    let static_const = context.is_static && context.is_const;
+    if static_const {
+        regex_str += "([A-Z]+_)+[A-Z]+";
+    } else {
+        if context.is_member {
+            regex_str += "m_";
+        }
+        if context.var_type == VarContextType::Ptr {
+            regex_str += "p";
+        }
+        if context.var_type == VarContextType::Ref {
+            regex_str += "r";
+        }
+
+        if context.is_member {
+            regex_str += "([A-Z][a-z0-9]+)+";
+        } else {
+            regex_str += "[a-z0-9]+([A-Z][a-z0-9]+)*";
+        }
+    }
+    regex_str += "$";
+
+    let r = regex::Regex::new(regex_str.as_str()).unwrap();
+    if !r.is_match(context.name.as_str()) {
+        return Err(regex_str);
+    }
+    return Ok(());
 }
