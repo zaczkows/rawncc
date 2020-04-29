@@ -74,11 +74,7 @@ pub fn check_ra_nc(context: &VarContext) -> Result<(), String> {
             regex_str += "r";
         }
 
-        if context.is_member {
-            regex_str += "([A-Z][a-z0-9]+)+";
-        } else {
-            regex_str += "[a-z0-9]+([A-Z][a-z0-9]+)*";
-        }
+        regex_str += "([A-Z][a-z0-9]+)+";
     }
     regex_str += "$";
 

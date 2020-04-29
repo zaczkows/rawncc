@@ -80,3 +80,20 @@ fn test_file_001_cpp() {
         items[6]
     );
 }
+
+#[test]
+fn test_fun_ra_nc() {
+    let result = rawncc::check_ra_nc(&rawncc::VarContext {
+        name: "pClock".to_owned(),
+        var_type: rawncc::VarContextType::Ptr,
+        is_member: false,
+        is_const: false,
+        is_static: false,
+        src_location: rawncc::SrcLocation {
+            file: "foobar.cpp".to_owned(),
+            line_no: 666,
+            column: 42,
+        },
+    });
+    assert!(result.is_ok());
+}
