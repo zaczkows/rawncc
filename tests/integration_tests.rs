@@ -96,4 +96,18 @@ fn test_fun_ra_nc() {
         },
     });
     assert!(result.is_ok());
+
+    let result = rawncc::check_ra_nc(&rawncc::VarContext {
+        name: "clockWork".to_owned(),
+        var_type: rawncc::VarContextType::Value,
+        is_member: false,
+        is_const: false,
+        is_static: false,
+        src_location: rawncc::SrcLocation {
+            file: "foobar.cpp".to_owned(),
+            line_no: 666,
+            column: 42,
+        },
+    });
+    assert!(result.is_ok());
 }

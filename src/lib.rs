@@ -67,14 +67,20 @@ pub fn check_ra_nc(context: &VarContext) -> Result<(), String> {
         if context.is_member {
             regex_str += "m_";
         }
+
+        let uppercase_first = "([A-Z][a-z0-9]+)+";
+        let lowercase_first = "[a-z0-9]+([A-Z][a-z0-9]+)*";
         if context.var_type == VarContextType::Ptr {
             regex_str += "p";
+            regex_str += uppercase_first;
         }
-        if context.var_type == VarContextType::Ref {
+        else if context.var_type == VarContextType::Ref {
             regex_str += "r";
+            regex_str += uppercase_first;
         }
-
-        regex_str += "([A-Z][a-z0-9]+)+";
+        else {
+            regex_str += lowercase_first;
+        }
     }
     regex_str += "$";
 
