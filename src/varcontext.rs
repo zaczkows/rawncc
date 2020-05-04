@@ -15,7 +15,7 @@ fn is_member_variable(entity: &clang::Entity, parent: &clang::Entity) -> bool {
     // This is needed in case of class static variable initialization
     // i.e. const int CLASS_NAME::VARIABLE = 42;
     let semantic_parent = entity.get_semantic_parent();
-    let is_semantic_parent_class = if semantic_parent.is_some() {
+    let is_semantic_parent_a_class = if semantic_parent.is_some() {
         let kind = semantic_parent.unwrap().get_kind();
         kind == clang::EntityKind::StructDecl || kind == clang::EntityKind::ClassDecl
     } else {
@@ -25,7 +25,7 @@ fn is_member_variable(entity: &clang::Entity, parent: &clang::Entity) -> bool {
     entity.get_kind() == clang::EntityKind::FieldDecl
         || parent.get_kind() == clang::EntityKind::StructDecl
         || parent.get_kind() == clang::EntityKind::ClassDecl
-        || is_semantic_parent_class
+        || is_semantic_parent_a_class
 }
 
 impl VarContext {

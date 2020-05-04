@@ -8,9 +8,24 @@ pub use srclocation::SrcLocation;
 pub use varcontext::VarContext;
 pub use varcontexttype::VarContextType;
 
-pub fn parse_file<F: FnMut(VarContext)>(options: Options, mut callback: F) {
+#[macro_use]
+extern crate lazy_static;
+
+fn get_clang() -> &'static clang::Clang {
+    lazy_static! {
+        static ref CLANG: clang::Clang =
+            clang::Clang::new().expect("Failed to create basic clang object");
+    }
+
+    return &CLANG;
+}
+
+pub fn parse_file<F>(options: Options, mut callback: F)
+where
+    F: FnMut(VarContext),
+{
     log::debug!("Using {}", clang::get_version());
-    let c = clang::Clang::new().expect("Failed to create basic clang object");
+    let c = get_clang();
     let i = clang::Index::new(&c, false, options.verbose > 0);
     let mut cpp_arguments = vec!["-x", "c++", "-std=c++11"];
     for i in options.includes.iter() {
@@ -73,12 +88,10 @@ pub fn check_ra_nc(context: &VarContext) -> Result<(), String> {
         if context.var_type == VarContextType::Ptr {
             regex_str += "p";
             regex_str += uppercase_first;
-        }
-        else if context.var_type == VarContextType::Ref {
+        } else if context.var_type == VarContextType::Ref {
             regex_str += "r";
             regex_str += uppercase_first;
-        }
-        else {
+        } else {
             regex_str += lowercase_first;
         }
     }
