@@ -1,8 +1,12 @@
+mod callback;
+mod fncontext;
 mod opts;
 mod srclocation;
 mod varcontext;
 mod varcontexttype;
 
+pub use callback::{Callback, TCallback};
+pub use fncontext::FnContext;
 pub use opts::Options;
 pub use srclocation::SrcLocation;
 pub use varcontext::VarContext;
@@ -20,10 +24,7 @@ fn get_clang() -> &'static clang::Clang {
     return &CLANG;
 }
 
-pub fn parse_file<F>(options: Options, mut callback: F)
-where
-    F: FnMut(VarContext),
-{
+pub fn parse_file(options: Options, mut callback: Callback) {
     log::debug!("Using {}", clang::get_version());
     let c = get_clang();
     let i = clang::Index::new(&c, false, options.verbose > 0);
@@ -65,7 +66,14 @@ where
         match entity.get_kind() {
             clang::EntityKind::VarDecl | clang::EntityKind::FieldDecl => {
                 // log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
-                callback(VarContext::from(&entity, &parent));
+                if callback.var.is_some() {
+                    (callback.var.as_mut().unwrap())(VarContext::from(&entity, &parent));
+                }
+            }
+            clang::EntityKind::FunctionDecl => {
+                if callback.fun.is_some() {
+                    (callback.fun.as_mut().unwrap())(FnContext {});
+                }
             }
             _ => (),
         }

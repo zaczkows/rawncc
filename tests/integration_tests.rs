@@ -1,5 +1,7 @@
 extern crate rawncc;
 
+use rawncc::{Callback, TCallback, VarContext};
+
 use std::sync::Once;
 
 static LOGGER: Once = Once::new();
@@ -25,9 +27,9 @@ fn test_file_001_cpp() {
         includes: vec![],
     };
 
-    let mut items = Vec::<rawncc::VarContext>::new();
-    let callback = |context| items.push(context);
-    rawncc::parse_file(opts, callback);
+    let mut items = Vec::<VarContext>::new();
+    let mut callback = |context| items.push(context);
+    rawncc::parse_file(opts, Callback::new(&mut callback));
     assert_eq!(22, items.len());
     assert_eq!(
         rawncc::VarContext {
@@ -103,8 +105,8 @@ fn test_file_002_cpp() {
     };
 
     let mut items = Vec::<rawncc::VarContext>::new();
-    let callback = |context| items.push(context);
-    rawncc::parse_file(opts, callback);
+    let mut callback = |context| items.push(context);
+    rawncc::parse_file(opts, Callback::new(&mut callback));
     assert_eq!(5, items.len());
     assert_eq!(
         rawncc::VarContext {
