@@ -3,14 +3,12 @@ mod fncontext;
 mod opts;
 mod srclocation;
 mod varcontext;
-mod varcontexttype;
 
 pub use callback::{Callback, TCallback};
 pub use fncontext::FnContext;
 pub use opts::Options;
 pub use srclocation::SrcLocation;
-pub use varcontext::VarContext;
-pub use varcontexttype::VarContextType;
+pub use varcontext::{VarContext, VarContextType};
 
 #[macro_use]
 extern crate lazy_static;

@@ -111,14 +111,14 @@ fn test_file_002_cpp() {
     assert_eq!(
         rawncc::VarContext {
             name: "TRANSLATION".to_owned(),
-            var_type: rawncc::VarContextType::Value,
+            var_type: rawncc::VarContextType::Array,
             is_member: false,
             is_const: true,
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test002.cpp".to_owned(),
                 line_no: 6,
-                column: 7,
+                column: 20,
             }
         },
         items[2]
