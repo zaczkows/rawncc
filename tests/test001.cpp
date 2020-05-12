@@ -1,7 +1,5 @@
 #include "test001.hpp"
 
-#include <iostream>
-
 namespace
 {
 const char* UNNAMED_NAMESPACE = "the text";
@@ -40,8 +38,6 @@ int main()
     float* h = &g;
     float*& i = h;
     int x = 10;
-    std::cout << x << std::endl;
     Test001 test_001;
-    std::cout << Test001::wtf << std::endl;
     return 0;
 }

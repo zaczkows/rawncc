@@ -40,7 +40,7 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 7,
+                line_no: 5,
                 column: 13,
             }
         },
@@ -55,7 +55,7 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 10,
+                line_no: 8,
                 column: 20,
             }
         },
@@ -70,11 +70,56 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 12,
+                line_no: 10,
                 column: 22,
             }
         },
         items[2]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "m_Int".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: true,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 18,
+                column: 9,
+            }
+        },
+        items[3]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "m_pInt".to_owned(),
+            var_type: rawncc::VarContextType::Ptr,
+            is_member: true,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 19,
+                column: 10,
+            }
+        },
+        items[4]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "m_rInt".to_owned(),
+            var_type: rawncc::VarContextType::Ref,
+            is_member: true,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 20,
+                column: 10,
+            }
+        },
+        items[5]
     );
     assert_eq!(
         rawncc::VarContext {
@@ -85,7 +130,7 @@ fn test_file_001_cpp() {
             is_static: true,
             src_location: rawncc::SrcLocation {
                 file: "tests/test001.cpp".to_owned(),
-                line_no: 23,
+                line_no: 21,
                 column: 22,
             }
         },

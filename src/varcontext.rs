@@ -73,6 +73,7 @@ fn is_const_type(entity: &clang::Entity, var_type: &VarContextType) -> bool {
 }
 
 fn is_static_type(entity: &clang::Entity) -> bool {
+    let entity = entity.get_canonical_entity();
     let storage_class = entity.get_storage_class();
     if storage_class.is_some() {
         if storage_class.unwrap() == clang::StorageClass::Static {
@@ -81,7 +82,7 @@ fn is_static_type(entity: &clang::Entity) -> bool {
     }
 
     let linkage = entity.get_linkage().unwrap();
-    linkage != clang::Linkage::Automatic
+    linkage == clang::Linkage::Internal
 }
 
 impl VarContext {
