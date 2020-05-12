@@ -65,12 +65,23 @@ fn is_const_type(entity: &clang::Entity, var_type: &VarContextType) -> bool {
             .get_pointee_type()
             .unwrap()
             .is_const_qualified(),
-        VarContextType::Array => {
-            entity.get_type().unwrap().get_kind() == clang::TypeKind::ConstantArray
-        }
+        // WTF? - yeap, the best idea I have about getting constness from clang...
+        VarContextType::Array => context_type.get_display_name().find("const").is_some(),
     };
 
     is_const
+}
+
+fn is_static_type(entity: &clang::Entity) -> bool {
+    let storage_class = entity.get_storage_class();
+    if storage_class.is_some() {
+        if storage_class.unwrap() == clang::StorageClass::Static {
+            return true;
+        }
+    }
+
+    let linkage = entity.get_linkage().unwrap();
+    linkage != clang::Linkage::Automatic
 }
 
 impl VarContext {
@@ -81,14 +92,13 @@ impl VarContext {
         );
         let var_type = VarContextType::from(entity);
         let name = entity.get_name().unwrap();
-        let linkage = entity.get_linkage().unwrap();
         let is_const = is_const_type(entity, &var_type);
         VarContext {
             name,
             var_type,
             is_member: is_member_variable(entity, parent),
             is_const,
-            is_static: linkage != clang::Linkage::Automatic,
+            is_static: is_static_type(entity),
             src_location: SrcLocation::from(entity),
         }
     }

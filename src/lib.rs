@@ -26,7 +26,7 @@ pub fn parse_file(options: Options, mut callback: Callback) {
     log::debug!("Using {}", clang::get_version());
     let c = get_clang();
     let i = clang::Index::new(&c, false, options.verbose > 0);
-    let mut cpp_arguments = vec!["-x", "c++", "-std=c++11"];
+    let mut cpp_arguments = vec!["-x", "c++", "-std=c++11", "-fsyntax-only"];
     for i in options.includes.iter() {
         cpp_arguments.push("-I");
         cpp_arguments.push(i.as_str());
@@ -72,6 +72,9 @@ pub fn parse_file(options: Options, mut callback: Callback) {
                 if callback.fun.is_some() {
                     (callback.fun.as_mut().unwrap())(FnContext {});
                 }
+            }
+            clang::EntityKind::ConstAttr => {
+                log::debug!("Found const attr: {:?}", &entity);
             }
             _ => (),
         }
