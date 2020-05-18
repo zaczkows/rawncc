@@ -8,7 +8,7 @@ static LOGGER: Once = Once::new();
 
 fn test_setup() {
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "debug");
+        std::env::set_var("RUST_LOG", "info");
     }
 
     LOGGER.call_once(|| {
@@ -136,6 +136,36 @@ fn test_file_001_cpp() {
         },
         items[6]
     );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "the_const_d".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: true,
+            is_static: true, // <- actuall 'internal' linkage
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 24,
+                column: 14,
+            }
+        },
+        items[7]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "the_const_unsigned".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: true,
+            is_static: true, // <- actuall 'internal' linkage
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 25,
+                column: 20,
+            }
+        },
+        items[8]
+    );
 }
 
 #[test]
@@ -167,6 +197,33 @@ fn test_file_002_cpp() {
             }
         },
         items[2]
+    );
+}
+
+#[test]
+fn test_file_003_cpp() {
+    test_setup();
+
+    let opts = rawncc::Options {
+        debug: false,
+        verbose: 0,
+        input: std::path::PathBuf::from("tests/test003.cpp"),
+        includes: vec![],
+    };
+
+    let mut items = Vec::<rawncc::CastContext>::new();
+    let mut callback = |context| items.push(context);
+    rawncc::parse_file(opts, Callback::new(&mut callback));
+    assert_eq!(1, items.len());
+    assert_eq!(
+        rawncc::CastContext {
+            location: rawncc::SrcLocation {
+                file: "tests/test003.cpp".to_owned(),
+                line_no: 3,
+                column: 12,
+            }
+        },
+        items[0]
     );
 }
 

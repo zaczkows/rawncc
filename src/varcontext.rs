@@ -1,6 +1,6 @@
 use crate::srclocation::SrcLocation;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum VarContextType {
     Value,
     Ptr,

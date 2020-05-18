@@ -1,4 +1,4 @@
-use rawncc::{Callback, FnContext, VarContext};
+use rawncc::{Callback, CastContext, FnContext, VarContext};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -48,30 +48,35 @@ fn main() {
     let options = Opts::from_args();
 
     let mut var_handler = {
-        let opts = options.clone();
+        // let opts = options.clone();
         move |context: VarContext| {
-            if opts.debug {
-                log::debug!("Found variable: {:?}", context);
-            }
-            match rawncc::check_ra_nc(&context) {
-                Ok(()) => (),
-                Err(regex) => log::debug!(
-                    "Invalid name for variable {:?} (regex = {})",
-                    &context,
-                    &regex
-                ),
-            }
+            // if opts.debug {
+            log::debug!("Found variable: {:?}", context);
+            // }
+            // match rawncc::check_ra_nc(&context) {
+            //     Ok(()) => (),
+            //     Err(regex) => log::debug!(
+            //         "Invalid name for variable {:?} (regex = {})",
+            //         &context,
+            //         &regex
+            //     ),
+            // }
         }
     };
 
     let mut fn_handler =
         |context: FnContext| log::debug!("Initial call for function handler {:?}", &context);
 
+    let mut cast_handler = |context: CastContext| {
+        log::error!("C style cast found at {:?}. Remove immediatelly!", &context.location)
+    };
+
     rawncc::parse_file(
         options.clone().into(),
         Callback {
             var: Some(&mut var_handler),
             fun: Some(&mut fn_handler),
+            cast: Some(&mut cast_handler),
         },
     );
 }

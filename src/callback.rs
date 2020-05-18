@@ -1,9 +1,11 @@
-use crate::varcontext::VarContext;
+use crate::cast_context::CastContext;
 use crate::fncontext::FnContext;
+use crate::varcontext::VarContext;
 
 pub struct Callback<'a> {
     pub var: Option<&'a mut dyn FnMut(VarContext)>,
     pub fun: Option<&'a mut dyn FnMut(FnContext)>,
+    pub cast: Option<&'a mut dyn FnMut(CastContext)>,
 }
 
 pub trait TCallback<'a, T> {
@@ -15,6 +17,7 @@ impl<'a> TCallback<'a, VarContext> for Callback<'a> {
         Callback {
             var: Some(f),
             fun: None,
+            cast: None,
         }
     }
 }
@@ -24,6 +27,17 @@ impl<'a> TCallback<'a, FnContext> for Callback<'a> {
         Callback {
             var: None,
             fun: Some(f),
+            cast: None,
+        }
+    }
+}
+
+impl<'a> TCallback<'a, CastContext> for Callback<'a> {
+    fn new(f: &'a mut dyn FnMut(CastContext)) -> Self {
+        Callback {
+            var: None,
+            fun: None,
+            cast: Some(f),
         }
     }
 }

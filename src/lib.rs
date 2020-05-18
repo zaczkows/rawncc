@@ -1,10 +1,12 @@
 mod callback;
+mod cast_context;
 mod fncontext;
 mod opts;
 mod srclocation;
 mod varcontext;
 
 pub use callback::{Callback, TCallback};
+pub use cast_context::CastContext;
 pub use fncontext::FnContext;
 pub use opts::Options;
 pub use srclocation::SrcLocation;
@@ -71,6 +73,13 @@ pub fn parse_file(options: Options, mut callback: Callback) {
             clang::EntityKind::FunctionDecl => {
                 if callback.fun.is_some() {
                     (callback.fun.as_mut().unwrap())(FnContext {});
+                }
+            }
+            clang::EntityKind::CStyleCastExpr => {
+                if callback.cast.is_some() {
+                    (callback.cast.as_mut().unwrap())(CastContext {
+                        location: SrcLocation::from(&entity),
+                    });
                 }
             }
             clang::EntityKind::ConstAttr => {
