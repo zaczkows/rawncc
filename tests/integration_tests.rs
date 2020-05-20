@@ -166,6 +166,201 @@ fn test_file_001_cpp() {
         },
         items[8]
     );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "the_const_ref_d".to_owned(),
+            var_type: rawncc::VarContextType::Ref,
+            is_member: false,
+            is_const: true,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 26,
+                column: 15,
+            }
+        },
+        items[9]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "the_const_ref_char".to_owned(),
+            var_type: rawncc::VarContextType::Ref,
+            is_member: false,
+            is_const: true,
+            is_static: true,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 27,
+                column: 20,
+            }
+        },
+        items[10]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "c".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 31,
+                column: 10,
+            }
+        },
+        items[11]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "b".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 32,
+                column: 12,
+            }
+        },
+        items[12]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "bb".to_owned(),
+            var_type: rawncc::VarContextType::Ref,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 33,
+                column: 14,
+            }
+        },
+        items[13]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "d".to_owned(),
+            var_type: rawncc::VarContextType::Ptr,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 34,
+                column: 13,
+            }
+        },
+        items[14]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "blah".to_owned(),
+            var_type: rawncc::VarContextType::Ptr,
+            is_member: false,
+            is_const: true,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 35,
+                column: 17,
+            }
+        },
+        items[15]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "f".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 36,
+                column: 11,
+            }
+        },
+        items[16]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "g".to_owned(),
+            var_type: rawncc::VarContextType::Ref,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 37,
+                column: 12,
+            }
+        },
+        items[17]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "h".to_owned(),
+            var_type: rawncc::VarContextType::Ptr,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 38,
+                column: 12,
+            }
+        },
+        items[18]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "i".to_owned(),
+            var_type: rawncc::VarContextType::Ref,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 39,
+                column: 13,
+            }
+        },
+        items[19]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "x".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 40,
+                column: 9,
+            }
+        },
+        items[20]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "test_001".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: false,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 41,
+                column: 13,
+            }
+        },
+        items[21]
+    );
 }
 
 #[test]

@@ -68,7 +68,10 @@ fn main() {
         |context: FnContext| log::debug!("Initial call for function handler {:?}", &context);
 
     let mut cast_handler = |context: CastContext| {
-        log::error!("C style cast found at {:?}. Remove immediatelly!", &context.location)
+        log::error!(
+            "C style cast found at {:?}. Remove immediatelly!",
+            &context.location
+        )
     };
 
     rawncc::parse_file(
