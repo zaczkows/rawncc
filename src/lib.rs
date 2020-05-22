@@ -1,5 +1,6 @@
 mod callback;
 mod cast_context;
+mod complex_context;
 mod fn_context;
 mod opts;
 mod srclocation;
@@ -7,6 +8,7 @@ mod varcontext;
 
 pub use callback::{Callback, TCallback};
 pub use cast_context::CastContext;
+pub use complex_context::{ComplexContext, ComplexType};
 pub use fn_context::{FnContext, FnType};
 pub use opts::Options;
 pub use srclocation::SrcLocation;
@@ -55,7 +57,7 @@ pub fn parse_file(options: Options, mut callback: Callback) {
         let loc = entity.get_location();
         if let Some(l) = loc {
             if !l.is_in_main_file() {
-                return clang::EntityVisitResult::Recurse;
+                return clang::EntityVisitResult::Continue;
             }
         }
 
@@ -66,6 +68,12 @@ pub fn parse_file(options: Options, mut callback: Callback) {
         let entity_kind = entity.get_kind();
         if callback.fun.is_some() && fn_context::is_fn_type(&entity_kind).is_some() {
             (callback.fun.as_mut().unwrap())(FnContext::from(&entity));
+            return clang::EntityVisitResult::Recurse;
+        }
+
+        if callback.complex.is_some() && complex_context::get_complex_type(&entity_kind).is_some() {
+            (callback.complex.as_mut().unwrap())(ComplexContext::from(&entity));
+            return clang::EntityVisitResult::Recurse;
         }
 
         match entity.get_kind() {
@@ -73,6 +81,7 @@ pub fn parse_file(options: Options, mut callback: Callback) {
                 if callback.var.is_some() {
                     (callback.var.as_mut().unwrap())(VarContext::from(&entity, &parent));
                 }
+                return clang::EntityVisitResult::Continue;
             }
             clang::EntityKind::CStyleCastExpr => {
                 if callback.cast.is_some() {
@@ -80,12 +89,14 @@ pub fn parse_file(options: Options, mut callback: Callback) {
                         location: SrcLocation::from(&entity),
                     });
                 }
+                return clang::EntityVisitResult::Continue;
             }
             clang::EntityKind::ConstAttr => {
                 log::debug!("Found const attr: {:?}", &entity);
             }
             _ => (),
         }
+
         return clang::EntityVisitResult::Recurse;
     });
 }

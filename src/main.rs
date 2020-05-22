@@ -1,4 +1,4 @@
-use rawncc::{Callback, CastContext, FnContext, VarContext};
+use rawncc::{Callback, CastContext, ComplexContext, FnContext, VarContext};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -64,8 +64,7 @@ fn main() {
         }
     };
 
-    let mut fn_handler =
-        |context: FnContext| log::debug!("Found function: {:?}", &context);
+    let mut fn_handler = |context: FnContext| log::debug!("Found function: {:?}", &context);
 
     let mut cast_handler = |context: CastContext| {
         log::error!(
@@ -74,12 +73,17 @@ fn main() {
         )
     };
 
+    let mut complex_handler = |context: ComplexContext| {
+        log::debug!("Found complext type: {:?}", &context);
+    };
+
     rawncc::parse_file(
         options.clone().into(),
         Callback {
             var: Some(&mut var_handler),
             fun: Some(&mut fn_handler),
             cast: Some(&mut cast_handler),
+            complex: Some(&mut complex_handler),
         },
     );
 }
