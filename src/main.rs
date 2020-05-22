@@ -65,7 +65,7 @@ fn main() {
     };
 
     let mut fn_handler =
-        |context: FnContext| log::debug!("Initial call for function handler {:?}", &context);
+        |context: FnContext| log::debug!("Found function: {:?}", &context);
 
     let mut cast_handler = |context: CastContext| {
         log::error!(

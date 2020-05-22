@@ -17,7 +17,7 @@ fn test_setup() {
 }
 
 #[test]
-fn test_file_001_cpp() {
+fn test_vars_in_file_001_cpp() {
     test_setup();
 
     let opts = rawncc::Options {
@@ -364,7 +364,7 @@ fn test_file_001_cpp() {
 }
 
 #[test]
-fn test_file_002_cpp() {
+fn test_vars_in_file_002_cpp() {
     test_setup();
 
     let opts = rawncc::Options {
@@ -377,7 +377,37 @@ fn test_file_002_cpp() {
     let mut items = Vec::<rawncc::VarContext>::new();
     let mut callback = |context| items.push(context);
     rawncc::parse_file(opts, Callback::new(&mut callback));
-    assert_eq!(5, items.len());
+    assert_eq!(5, items.len()); // TODO: investigate why not 3
+    assert_eq!(
+        rawncc::VarContext {
+            name: "number".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: true,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test002.cpp".to_owned(),
+                line_no: 4,
+                column: 13,
+            }
+        },
+        items[0]
+    );
+    assert_eq!(
+        rawncc::VarContext {
+            name: "result".to_owned(),
+            var_type: rawncc::VarContextType::Value,
+            is_member: true,
+            is_const: false,
+            is_static: false,
+            src_location: rawncc::SrcLocation {
+                file: "tests/test002.cpp".to_owned(),
+                line_no: 5,
+                column: 18,
+            }
+        },
+        items[1]
+    );
     assert_eq!(
         rawncc::VarContext {
             name: "TRANSLATION".to_owned(),
@@ -396,7 +426,7 @@ fn test_file_002_cpp() {
 }
 
 #[test]
-fn test_file_003_cpp() {
+fn test_cast_in_file_003_cpp() {
     test_setup();
 
     let opts = rawncc::Options {
@@ -419,6 +449,129 @@ fn test_file_003_cpp() {
             }
         },
         items[0]
+    );
+}
+
+#[test]
+fn test_functions_in_file_001_cpp() {
+    test_setup();
+
+    let opts = rawncc::Options {
+        debug: false,
+        verbose: 0,
+        input: std::path::PathBuf::from("tests/test001.cpp"),
+        includes: vec![],
+    };
+
+    let mut items = Vec::<rawncc::FnContext>::new();
+    let mut callback = |context| items.push(context);
+    rawncc::parse_file(opts, Callback::new(&mut callback));
+    assert_eq!(3, items.len());
+    assert_eq!(
+        rawncc::FnContext {
+            name: "Temp".to_owned(),
+            fn_type: rawncc::FnType::Ctor,
+            location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 15,
+                column: 5,
+            }
+        },
+        items[0]
+    );
+    assert_eq!(
+        rawncc::FnContext {
+            name: "blah".to_owned(),
+            fn_type: rawncc::FnType::Method,
+            location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 16,
+                column: 10,
+            }
+        },
+        items[1]
+    );
+    assert_eq!(
+        rawncc::FnContext {
+            name: "main".to_owned(),
+            fn_type: rawncc::FnType::Function,
+            location: rawncc::SrcLocation {
+                file: "tests/test001.cpp".to_owned(),
+                line_no: 29,
+                column: 5,
+            }
+        },
+        items[2]
+    );
+}
+
+#[test]
+fn test_functions_in_file_002_cpp() {
+    test_setup();
+
+    let opts = rawncc::Options {
+        debug: false,
+        verbose: 0,
+        input: std::path::PathBuf::from("tests/test002.cpp"),
+        includes: vec![],
+    };
+
+    let mut items = Vec::<rawncc::FnContext>::new();
+    let mut callback = |context| items.push(context);
+    rawncc::parse_file(opts, Callback::new(&mut callback));
+    assert_eq!(1, items.len());
+    assert_eq!(
+        rawncc::FnContext {
+            name: "getNumber".to_owned(),
+            fn_type: rawncc::FnType::Function,
+            location: rawncc::SrcLocation {
+                file: "tests/test002.cpp".to_owned(),
+                line_no: 1,
+                column: 10,
+            }
+        },
+        items[0]
+    );
+}
+
+#[test]
+fn test_functions_in_file_003_cpp() {
+    test_setup();
+
+    let opts = rawncc::Options {
+        debug: false,
+        verbose: 0,
+        input: std::path::PathBuf::from("tests/test003.cpp"),
+        includes: vec![],
+    };
+
+    let mut items = Vec::<rawncc::FnContext>::new();
+    let mut callback = |context| items.push(context);
+    rawncc::parse_file(opts, Callback::new(&mut callback));
+    assert_eq!(2, items.len());
+    assert_eq!(
+        rawncc::FnContext {
+            name: "test003".to_owned(),
+            fn_type: rawncc::FnType::Function,
+            location: rawncc::SrcLocation {
+                file: "tests/test003.cpp".to_owned(),
+                line_no: 1,
+                column: 10,
+            }
+        },
+        items[0]
+    );
+    assert_eq!(
+        rawncc::FnContext {
+            name: "test003_f".to_owned(),
+            fn_type: rawncc::FnType::Function,
+            location: rawncc::SrcLocation {
+                file: "tests/test003.cpp".to_owned(),
+                line_no: 6,
+                column: 7,
+            }
+        },
+        items[1]
     );
 }
 

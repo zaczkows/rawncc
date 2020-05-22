@@ -1,13 +1,13 @@
 mod callback;
 mod cast_context;
-mod fncontext;
+mod fn_context;
 mod opts;
 mod srclocation;
 mod varcontext;
 
 pub use callback::{Callback, TCallback};
 pub use cast_context::CastContext;
-pub use fncontext::FnContext;
+pub use fn_context::{FnContext, FnType};
 pub use opts::Options;
 pub use srclocation::SrcLocation;
 pub use varcontext::{VarContext, VarContextType};
@@ -63,16 +63,15 @@ pub fn parse_file(options: Options, mut callback: Callback) {
             log::debug!("Entity item: {:?}", &entity);
         }
 
+        let entity_kind = entity.get_kind();
+        if callback.fun.is_some() && fn_context::is_fn_type(&entity_kind).is_some() {
+            (callback.fun.as_mut().unwrap())(FnContext::from(&entity));
+        }
+
         match entity.get_kind() {
             clang::EntityKind::VarDecl | clang::EntityKind::FieldDecl => {
-                // log::debug!("Parsing {:?}", entity.get_type().unwrap().get_kind());
                 if callback.var.is_some() {
                     (callback.var.as_mut().unwrap())(VarContext::from(&entity, &parent));
-                }
-            }
-            clang::EntityKind::FunctionDecl => {
-                if callback.fun.is_some() {
-                    (callback.fun.as_mut().unwrap())(FnContext {});
                 }
             }
             clang::EntityKind::CStyleCastExpr => {
