@@ -23,7 +23,7 @@ fn get_clang() -> &'static clang::Clang {
             clang::Clang::new().expect("Failed to create basic clang object");
     }
 
-    return &CLANG;
+    &CLANG
 }
 
 pub fn parse_file(options: Options, mut callback: Callback) {
@@ -43,7 +43,7 @@ pub fn parse_file(options: Options, mut callback: Callback) {
     let tu = p.parse();
     if let Err(e) = tu {
         log::error!("Failed to parse file with error {}", e);
-        return ();
+        return;
     }
 
     let tu = tu.unwrap();
@@ -97,11 +97,11 @@ pub fn parse_file(options: Options, mut callback: Callback) {
             _ => (),
         }
 
-        return clang::EntityVisitResult::Recurse;
+        clang::EntityVisitResult::Recurse
     });
 }
 
-pub fn check_ra_nc(context: &VarContext) -> Result<(), String> {
+pub fn check_ra_nc_var(context: &VarContext) -> Result<(), String> {
     let mut regex_str = String::from("^");
     let static_const = context.is_static && context.is_const;
     if static_const {
@@ -129,5 +129,6 @@ pub fn check_ra_nc(context: &VarContext) -> Result<(), String> {
     if !r.is_match(context.name.as_str()) {
         return Err(regex_str);
     }
-    return Ok(());
+
+    Ok(())
 }

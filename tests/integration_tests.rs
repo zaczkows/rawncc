@@ -680,10 +680,10 @@ fn test_complex_in_file_003_cpp() {
 }
 
 #[test]
-fn test_fun_ra_nc() {
+fn test_fun_ra_nc_var() {
     test_setup();
 
-    let result = rawncc::check_ra_nc(&rawncc::VarContext {
+    assert!(rawncc::check_ra_nc_var(&rawncc::VarContext {
         name: "pClock".to_owned(),
         var_type: rawncc::VarContextType::Ptr,
         is_member: false,
@@ -694,10 +694,10 @@ fn test_fun_ra_nc() {
             line_no: 666,
             column: 42,
         },
-    });
-    assert!(result.is_ok());
+    })
+    .is_ok());
 
-    let result = rawncc::check_ra_nc(&rawncc::VarContext {
+    assert!(rawncc::check_ra_nc_var(&rawncc::VarContext {
         name: "clockWork".to_owned(),
         var_type: rawncc::VarContextType::Value,
         is_member: false,
@@ -708,6 +708,20 @@ fn test_fun_ra_nc() {
             line_no: 666,
             column: 42,
         },
-    });
-    assert!(result.is_ok());
+    })
+    .is_ok());
+
+    assert!(rawncc::check_ra_nc_var(&rawncc::VarContext {
+        name: "ClockName".to_owned(),
+        var_type: rawncc::VarContextType::Value,
+        is_member: false,
+        is_const: false,
+        is_static: false,
+        src_location: rawncc::SrcLocation {
+            file: "foobar.cpp".to_owned(),
+            line_no: 666,
+            column: 42,
+        },
+    })
+    .is_err());
 }

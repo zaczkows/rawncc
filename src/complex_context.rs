@@ -30,7 +30,7 @@ impl ComplexContext {
         assert!(get_complex_type(&entity.get_kind()).is_some());
 
         ComplexContext {
-            name: entity.get_name().unwrap_or(String::from("")),
+            name: entity.get_name().unwrap_or_else(|| String::from("")),
             c_type: get_complex_type(&entity.get_kind()).unwrap(),
             location: SrcLocation::from(&entity),
         }

@@ -48,19 +48,19 @@ fn main() {
     let options = Opts::from_args();
 
     let mut var_handler = {
-        // let opts = options.clone();
+        let opts = options.clone();
         move |context: VarContext| {
-            // if opts.debug {
-            log::debug!("Found variable: {:?}", context);
-            // }
-            // match rawncc::check_ra_nc(&context) {
-            //     Ok(()) => (),
-            //     Err(regex) => log::debug!(
-            //         "Invalid name for variable {:?} (regex = {})",
-            //         &context,
-            //         &regex
-            //     ),
-            // }
+            if opts.debug {
+                log::debug!("Found variable: {:?}", context);
+            }
+            match rawncc::check_ra_nc_var(&context) {
+                Ok(()) => (),
+                Err(regex) => log::debug!(
+                    "Invalid name for variable {:?} (regex = {})",
+                    &context,
+                    &regex
+                ),
+            }
         }
     };
 
@@ -78,7 +78,7 @@ fn main() {
     };
 
     rawncc::parse_file(
-        options.clone().into(),
+        options.into(),
         Callback {
             var: Some(&mut var_handler),
             fun: Some(&mut fn_handler),

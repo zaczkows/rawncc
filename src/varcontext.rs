@@ -44,11 +44,12 @@ fn is_member_variable(entity: &clang::Entity, parent: &clang::Entity) -> bool {
     // This is needed in case of class static variable initialization
     // i.e. const int CLASS_NAME::VARIABLE = 42;
     let semantic_parent = entity.get_semantic_parent();
-    let is_semantic_parent_a_class = if semantic_parent.is_some() {
-        let kind = semantic_parent.unwrap().get_kind();
-        kind == clang::EntityKind::StructDecl || kind == clang::EntityKind::ClassDecl
-    } else {
-        false
+    let is_semantic_parent_a_class = match semantic_parent {
+        Some(sp) => {
+            let kind = sp.get_kind();
+            kind == clang::EntityKind::StructDecl || kind == clang::EntityKind::ClassDecl
+        }
+        None => false,
     };
 
     entity.get_kind() == clang::EntityKind::FieldDecl
@@ -59,7 +60,7 @@ fn is_member_variable(entity: &clang::Entity, parent: &clang::Entity) -> bool {
 
 fn is_const_type(entity: &clang::Entity, var_type: &VarContextType) -> bool {
     let context_type = entity.get_type().unwrap();
-    let is_const = match *var_type {
+    match *var_type {
         VarContextType::Value => context_type.is_const_qualified(),
         VarContextType::Ptr | VarContextType::Ref => context_type
             .get_pointee_type()
@@ -67,18 +68,14 @@ fn is_const_type(entity: &clang::Entity, var_type: &VarContextType) -> bool {
             .is_const_qualified(),
         // WTF? - yeap, the best idea I have about getting constness from clang...
         VarContextType::Array => context_type.get_display_name().find("const").is_some(),
-    };
-
-    is_const
+    }
 }
 
 fn is_static_type(entity: &clang::Entity) -> bool {
     let entity = entity.get_canonical_entity();
     let storage_class = entity.get_storage_class();
-    if storage_class.is_some() {
-        if storage_class.unwrap() == clang::StorageClass::Static {
-            return true;
-        }
+    if storage_class.is_some() && storage_class.unwrap() == clang::StorageClass::Static {
+        return true;
     }
 
     let linkage = entity.get_linkage().unwrap();
