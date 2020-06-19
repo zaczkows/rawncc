@@ -55,23 +55,15 @@ fn main() {
             }
             match rawncc::check_ra_nc_var(&context) {
                 Ok(()) => (),
-                Err(regex) => log::debug!(
-                    "Invalid name for variable {:?} (regex = {})",
-                    &context,
-                    &regex
-                ),
+                Err(regex) => log::debug!("Invalid name for variable {:?} (regex = {})", &context, &regex),
             }
         }
     };
 
     let mut fn_handler = |context: FnContext| log::debug!("Found function: {:?}", &context);
 
-    let mut cast_handler = |context: CastContext| {
-        log::error!(
-            "C style cast found at {:?}. Remove immediatelly!",
-            &context.location
-        )
-    };
+    let mut cast_handler =
+        |context: CastContext| log::error!("C style cast found at {:?}. Remove immediatelly!", &context.location);
 
     let mut complex_handler = |context: ComplexContext| {
         log::debug!("Found complext type: {:?}", &context);

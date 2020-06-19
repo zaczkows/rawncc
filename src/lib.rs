@@ -19,8 +19,7 @@ extern crate lazy_static;
 
 fn get_clang() -> &'static clang::Clang {
     lazy_static! {
-        static ref CLANG: clang::Clang =
-            clang::Clang::new().expect("Failed to create basic clang object");
+        static ref CLANG: clang::Clang = clang::Clang::new().expect("Failed to create basic clang object");
     }
 
     &CLANG
@@ -103,24 +102,43 @@ pub fn parse_file(options: Options, mut callback: Callback) {
 
 pub fn check_ra_nc_var(context: &VarContext) -> Result<(), String> {
     let mut regex_str = String::from("^");
-    let static_const = context.is_static && context.is_const;
-    if static_const {
-        regex_str += "([A-Z]+_)+[A-Z]+";
+    if context.is_const || context.is_static {
+        regex_str += "[A-Z][A-Z0-9]+(_[A-Z0-9]+)*";
     } else {
-        if context.is_member {
-            regex_str += "m_";
-        }
-
         let uppercase_first = "([A-Z][a-z0-9]+)+";
-        let lowercase_first = "[a-z0-9]+([A-Z][a-z0-9]+)*";
-        if context.var_type == VarContextType::Ptr {
-            regex_str += "p";
-            regex_str += uppercase_first;
-        } else if context.var_type == VarContextType::Ref {
-            regex_str += "r";
-            regex_str += uppercase_first;
-        } else {
-            regex_str += lowercase_first;
+        let lowercase_first = "[a-z][a-z0-9]*([A-Z][a-z0-9]+)*";
+        match (&context.var_type, context.is_member) {
+            (VarContextType::Value, false) => regex_str += lowercase_first,
+            (VarContextType::Value, true) => {
+                regex_str += "m_";
+                regex_str += uppercase_first;
+            }
+            (VarContextType::Ptr, false) => {
+                regex_str += "p";
+                regex_str += uppercase_first;
+            }
+            (VarContextType::Ptr, true) => {
+                regex_str += "m_";
+                regex_str += "p";
+                regex_str += uppercase_first;
+            }
+            (VarContextType::Ref, false) => {
+                regex_str += "r";
+                regex_str += uppercase_first;
+            }
+            (VarContextType::Ref, true) => {
+                regex_str += "m_";
+                regex_str += "r";
+                regex_str += uppercase_first;
+            }
+            (VarContextType::Array, false) => {
+                regex_str += "r";
+                regex_str += lowercase_first;
+            }
+            (VarContextType::Array, true) => {
+                regex_str += "m_";
+                regex_str += uppercase_first;
+            }
         }
     }
     regex_str += "$";
@@ -131,4 +149,152 @@ pub fn check_ra_nc_var(context: &VarContext) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fun_ra_nc_var_simple() {
+        fn check_var(name: &str, var_type: VarContextType) -> Result<(), String> {
+            check_ra_nc_var(&VarContext {
+                name: name.to_owned(),
+                var_type,
+                is_member: false,
+                is_const: false,
+                is_static: false,
+                src_location: SrcLocation {
+                    file: "foobar.cpp".to_owned(),
+                    line_no: 666,
+                    column: 42,
+                },
+            })
+        }
+
+        assert!(check_var("clock", VarContextType::Value).is_ok());
+        assert!(check_var("clockType", VarContextType::Value).is_ok());
+        assert!(check_var("clock007Type", VarContextType::Value).is_ok());
+        assert!(check_var("clockTypeMe", VarContextType::Value).is_ok());
+        assert!(check_var("pClockTypeMe", VarContextType::Value).is_ok());
+        assert!(check_var("rClockTypeMe", VarContextType::Value).is_ok());
+        assert!(check_var("ClockTypeMe", VarContextType::Value).is_err());
+        assert!(check_var("clock_type_me", VarContextType::Value).is_err());
+        assert!(check_var("666Clock", VarContextType::Value).is_err());
+
+        assert!(check_var("pClock", VarContextType::Ptr).is_ok());
+        assert!(check_var("pClockWork", VarContextType::Ptr).is_ok());
+        assert!(check_var("pClock666Work", VarContextType::Ptr).is_ok());
+        assert!(check_var("clockWork", VarContextType::Ptr).is_err());
+        assert!(check_var("ClockWork", VarContextType::Ptr).is_err());
+        assert!(check_var("pClock_Work", VarContextType::Ptr).is_err());
+        assert!(check_var("p_clock_work", VarContextType::Ptr).is_err());
+
+        assert!(check_var("rClock", VarContextType::Ref).is_ok());
+        assert!(check_var("rClockWork", VarContextType::Ref).is_ok());
+        assert!(check_var("rClock666Work", VarContextType::Ref).is_ok());
+        assert!(check_var("clockWork", VarContextType::Ref).is_err());
+        assert!(check_var("ClockWork", VarContextType::Ref).is_err());
+        assert!(check_var("rClock_Work", VarContextType::Ref).is_err());
+        assert!(check_var("r_clock_work", VarContextType::Ref).is_err());
+    }
+
+    #[test]
+    fn test_fun_ra_nc_var_member() {
+        fn check_var(name: &str, var_type: VarContextType) -> Result<(), String> {
+            assert!(check_ra_nc_var(&VarContext {
+                name: name.to_owned(),
+                var_type: var_type.clone(),
+                is_member: true,
+                is_const: false,
+                is_static: false,
+                src_location: SrcLocation {
+                    file: "foobar.cpp".to_owned(),
+                    line_no: 666,
+                    column: 42,
+                },
+            })
+            .is_err());
+
+            check_ra_nc_var(&VarContext {
+                name: String::from("m_") + name,
+                var_type,
+                is_member: true,
+                is_const: false,
+                is_static: false,
+                src_location: SrcLocation {
+                    file: "foobar.cpp".to_owned(),
+                    line_no: 666,
+                    column: 42,
+                },
+            })
+        }
+
+        assert!(check_var("clock", VarContextType::Value).is_err());
+        assert!(check_var("clockType", VarContextType::Value).is_err());
+        assert!(check_var("clock007Type", VarContextType::Value).is_err());
+        assert!(check_var("clockTypeMe", VarContextType::Value).is_err());
+        assert!(check_var("pClockTypeMe", VarContextType::Value).is_err());
+        assert!(check_var("rClockTypeMe", VarContextType::Value).is_err());
+        assert!(check_var("ClockTypeMe", VarContextType::Value).is_ok());
+        assert!(check_var("clock_type_me", VarContextType::Value).is_err());
+
+        assert!(check_var("pClock", VarContextType::Ptr).is_ok());
+        assert!(check_var("pClockWork", VarContextType::Ptr).is_ok());
+        assert!(check_var("pClock666Work", VarContextType::Ptr).is_ok());
+        assert!(check_var("clockWork", VarContextType::Ptr).is_err());
+        assert!(check_var("ClockWork", VarContextType::Ptr).is_err());
+        assert!(check_var("pClock_Work", VarContextType::Ptr).is_err());
+        assert!(check_var("p_clock_work", VarContextType::Ptr).is_err());
+        assert!(check_var("p_clock_work", VarContextType::Ptr).is_err());
+
+        assert!(check_var("rClock", VarContextType::Ref).is_ok());
+        assert!(check_var("rClockWork", VarContextType::Ref).is_ok());
+        assert!(check_var("rClock666Work", VarContextType::Ref).is_ok());
+        assert!(check_var("clockWork", VarContextType::Ref).is_err());
+        assert!(check_var("ClockWork", VarContextType::Ref).is_err());
+        assert!(check_var("rClock_Work", VarContextType::Ref).is_err());
+        assert!(check_var("r_clock_work", VarContextType::Ref).is_err());
+    }
+
+    #[test]
+    fn test_fun_ra_nc_var_const() {
+        fn check_var(name: &str, var_type: VarContextType) -> Result<(), String> {
+            assert!(check_ra_nc_var(&VarContext {
+                name: name.to_owned(),
+                var_type: var_type.clone(),
+                is_member: false,
+                is_const: true,
+                is_static: false,
+                src_location: SrcLocation {
+                    file: "foobar.cpp".to_owned(),
+                    line_no: 666,
+                    column: 42,
+                },
+            })
+            .is_err());
+
+            let mut n = String::from(name);
+            n.make_ascii_uppercase();
+            check_ra_nc_var(&VarContext {
+                name: n,
+                var_type,
+                is_member: false,
+                is_const: true,
+                is_static: false,
+                src_location: SrcLocation {
+                    file: "foobar.cpp".to_owned(),
+                    line_no: 666,
+                    column: 42,
+                },
+            })
+        }
+
+        assert!(check_var("clock", VarContextType::Value).is_ok());
+        assert!(check_var("clockType", VarContextType::Value).is_ok());
+        assert!(check_var("clock007Type", VarContextType::Value).is_ok());
+        assert!(check_var("ClockTypeMe", VarContextType::Value).is_ok());
+        assert!(check_var("clock_type_me", VarContextType::Value).is_ok());
+        assert!(check_var("666_clock_type_me", VarContextType::Value).is_err());
+    }
 }
